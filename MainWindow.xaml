@@ -1,0 +1,168 @@
+﻿<Window x:Class="Support_Accountant.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Support_Accountant"
+        mc:Ignorable="d"
+        Title="Support Accountant"
+        Height="530" Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize"
+        Icon="favicon.ico"
+        FontFamily="Segoe UI" FontSize="12">
+
+    <Grid Background="#FAFAFA">
+        <!-- Layout: Menu, Main Tabs, Progress + Status -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Menu -->
+            <RowDefinition Height="*"/>
+            <!-- Tabs -->
+            <RowDefinition Height="Auto"/>
+            <!-- Progress + Status -->
+        </Grid.RowDefinitions>
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" Background="#F0F0F0">
+            <MenuItem Header="_File">
+                <MenuItem Header="New"/>
+                <Separator/>
+                <MenuItem Header="Exit"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="About" Click="Help_About_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="1" Margin="8">
+            <!-- TAB 1: RENAME -->
+            <TabItem Header="🔖 Rename Invoice">
+                <StackPanel Margin="10" Orientation="Vertical" >
+
+                    <!-- Folder Selection -->
+                    <GroupBox Header="📂 Folder Selection" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
+                            <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="True" Name="txtBox_Browse_Rename" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Browse..." Margin="5,0" Name="btn_Browse_Rename" Click="btn_Browse_Rename_Click"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- File Preview -->
+                    <GroupBox Header="🗂 File Preview" Margin="5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="5" Grid.Column="0">
+                                <ComboBox Margin="0,0,0,5" IsReadOnly="True"/>
+                                <Label Content="Files found: 0 XML / 0 PDF" Foreground="Gray" FontSize="11"/>
+                            </StackPanel>
+                            <Label Grid.Column="1" Content="▼ Select XML" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Actions -->
+                    <GroupBox Header="⚙️ Actions" Margin="5">
+                        <UniformGrid Columns="3" Margin="5">
+                            <Button Content="🔍 Open Folder" Margin="5"/>
+                            <Button Content="✏️ Rename File" Margin="5"/>
+                            <Button Content="📂 Rename All" Margin="5"/>
+                        </UniformGrid>
+                    </GroupBox>
+                </StackPanel>
+            </TabItem>
+
+            <!-- TAB 2: EXTRACT -->
+            <TabItem Header="📑 Extract Invoice">
+                <StackPanel Margin="10" Orientation="Vertical" >
+
+                    <!-- Folder Selection -->
+                    <GroupBox Header="📂 Folder Selection" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
+                            <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="True"/>
+                            <Button Grid.Column="2" Content="Browse..." Margin="5,0"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- File Preview -->
+                    <GroupBox Header="🗂 File Preview" Margin="5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="5" Grid.Column="0">
+                                <ComboBox Margin="0,0,0,5" IsReadOnly="True"/>
+                                <Label Content="Files found: 0 XML" Foreground="Gray" FontSize="11"/>
+                            </StackPanel>
+                            <Label Grid.Column="1" Content="▼ Select XML" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Extraction Settings -->
+                    <GroupBox Header="⚙️ Extraction Settings" Margin="5">
+                        <StackPanel Margin="5" Orientation="Vertical">
+                            <TextBlock Text="Summary Info:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <WrapPanel>
+                                <CheckBox Content="Số hóa đơn" Margin="5" IsChecked="True"/>
+                                <CheckBox Content="Ngày lập" Margin="5" IsChecked="True"/>
+                                <CheckBox Content="Người bán" Margin="5"/>
+                                <CheckBox Content="Người mua" Margin="5"/>
+                                <CheckBox Content="Tổng SL" Margin="5" IsChecked="True"/>
+                                <CheckBox Content="Tổng tiền" Margin="5" IsChecked="True" />
+                                <CheckBox Content="Tiền thuế" Margin="5" IsChecked="True"/>
+                                <CheckBox Content="Thành tiền" Margin="5" IsChecked="True"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="Each Invoice:" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <WrapPanel>
+                                <CheckBox Content="Người bán" Margin="5"/>
+                                <CheckBox Content="Người mua" Margin="5"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Actions -->
+                    <GroupBox Header="⚙️ Actions" Margin="5">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="🔍 Open File" Margin="5" Padding="10,5"/>
+                            <Button Content="⬇️ Export Summary" Margin="5" Padding="10,5"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <!-- Progress + Status -->
+        <DockPanel Grid.Row="2" Background="#EEEEEE" LastChildFill="True" Height="36" VerticalAlignment="Center">
+            <!-- Progress Bar shared by all tabs -->
+            <ProgressBar x:Name="mainProgressBar" Height="16" Margin="10,0" Width="200" VerticalAlignment="Center"/>
+
+            <Label Content="Version 1.0"
+                   VerticalAlignment="Center"
+                   Margin="10,0"
+                   Foreground="Gray"/>
+            <Label x:Name="label_CurTime"
+                   Content="ddd yy/MM/dd - HH:mm:ss"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Right"
+                   Margin="0,0,10,0"
+                   Foreground="Gray"/>
+        </DockPanel>
+    </Grid>
+</Window>
