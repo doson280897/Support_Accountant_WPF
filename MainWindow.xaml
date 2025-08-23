@@ -5,19 +5,24 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Support_Accountant"
         mc:Ignorable="d"
-        Title="Support Accountant"
-        Height="530" Width="800"
+        Title="Support Accountant - Professional Invoice Management"
+        SizeToContent="WidthAndHeight"
+        MinWidth="800"
+        MaxWidth="1200"
+        MinHeight="500"
+        MaxHeight="900"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
         Icon="favicon.ico"
-        FontFamily="Segoe UI" FontSize="12">
+        FontFamily="Segoe UI" FontSize="12"
+        Loaded="MainWindow_Loaded">
 
     <Grid Background="#FAFAFA">
         <!-- Layout: Menu, Main Tabs, Progress + Status -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Menu -->
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <!-- Tabs -->
             <RowDefinition Height="Auto"/>
             <!-- Progress + Status -->
@@ -28,7 +33,7 @@
             <MenuItem Header="_File">
                 <MenuItem Header="New"/>
                 <Separator/>
-                <MenuItem Header="Exit"/>
+                <MenuItem Header="Exit" Click="File_Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="About" Click="Help_About_Click"/>
@@ -36,122 +41,234 @@
         </Menu>
 
         <!-- Main Tabs -->
-        <TabControl Grid.Row="1" Margin="8">
+        <TabControl x:Name="mainTabControl" Grid.Row="1" Margin="8" SelectionChanged="TabControl_SelectionChanged">
             <!-- TAB 1: RENAME -->
-            <TabItem Header="🔖 Rename Invoice">
-                <StackPanel Margin="10" Orientation="Vertical" >
+            <TabItem Header="🔖 Rename Invoice" Name="rename_tab">
+                <Grid Margin="10" Width="780">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="150"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- Folder Selection -->
-                    <GroupBox Header="📂 Folder Selection" Margin="5">
+                    <StackPanel Grid.Row="0" Orientation="Vertical">
+                        <!-- Folder Selection -->
+                        <GroupBox Header="📂 Folder Selection" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="False" Name="txtBox_Browse_RenameInvoice" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" MouseEnter="txtBox_Browse_RenameInvoice_MouseEnter"/>
+                                <Button Grid.Column="2" Content="Browse..." Margin="5,0" Name="btn_Browse_RenameInvoice" MouseEnter="btn_Browse_RenameInvoice_MouseEnter" Click="btn_Browse_RenameInvoice_Click"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- File Preview -->
+                        <GroupBox Header="🗂 File Preview" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="5" Grid.Column="0">
+                                    <ComboBox Margin="0,0,0,5" IsReadOnly="True" Name="ComboBox_RenameInvoice" MouseEnter="ComboBox_RenameInvoice_MouseEnter"/>
+                                    <Label Content="Files found: 0 XML / 0 PDF" Foreground="Gray" FontSize="11" Name="label_TotalFiles_RenameInvoice"/>
+                                </StackPanel>
+                                <StackPanel Margin="5" Grid.Column="1">
+                                    <Label Content="▼ Select XML" HorizontalAlignment="Left"/>
+                                    <Button Content="📂 Open File" Margin="5" Name="btn_Openfile_RenameInvoice" MouseEnter="btn_Openfile_RenameInvoice_MouseEnter" Click="btn_Openfile_RenameInvoice_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Actions -->
+                        <GroupBox Header="⚙️ Actions" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <UniformGrid Grid.Column="0" Columns="3" Margin="0,0,5,0">
+                                    <Button Content="✏️ Rename All" Margin="5" Name="btn_Renameall_RenameInvoice" MouseEnter="btn_Renameall_RenameInvoice_MouseEnter" Click="btn_Renameall_RenameInvoice_Click"/>
+                                    <Button Content="⏹ Stop" Margin="5" Name="btn_Stop_RenameInvoice" MouseEnter="btn_Stop_RenameInvoice_MouseEnter" Click="btn_Stop_RenameInvoice_Click" IsEnabled="False" Background="#FFE6E6" BorderBrush="#FF9999"/>
+                                    <Button Content="🔍 Open Folder" Margin="5" Name="btn_OpenFolder_RenameInvoice" MouseEnter="btn_OpenFolder_RenameInvoice_MouseEnter" Click="btn_OpenFolder_RenameInvoice_Click"/>
+                                </UniformGrid>
+                                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="5,0,0,0">
+                                    <Button Content="🗑 Clear Log" Margin="5" Name="btn_ClearLog_RenameInvoice" Click="btn_ClearLog_Click" Background="#FFF3CD" BorderBrush="#FFEAA0"/>
+                                    <CheckBox Content="Auto-scroll" Margin="5" Name="chk_AutoScroll_RenameInvoice" IsChecked="True"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+
+                    <!-- Log Window -->
+                    <GroupBox Grid.Row="1" Header="📋 Log &amp; Status" Margin="5,0,5,5">
                         <Grid Margin="5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
-                            <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="True" Name="txtBox_Browse_Rename" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
-                            <Button Grid.Column="2" Content="Browse..." Margin="5,0" Name="btn_Browse_Rename" Click="btn_Browse_Rename_Click"/>
-                        </Grid>
-                    </GroupBox>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                    <!-- File Preview -->
-                    <GroupBox Header="🗂 File Preview" Margin="5">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Margin="5" Grid.Column="0">
-                                <ComboBox Margin="0,0,0,5" IsReadOnly="True"/>
-                                <Label Content="Files found: 0 XML / 0 PDF" Foreground="Gray" FontSize="11"/>
+                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Name="logScrollViewer">
+                                <TextBox Name="txtLog_RenameInvoice" 
+                                         IsReadOnly="True"
+                                         Background="White"
+                                         FontFamily="Consolas"
+                                         FontSize="10"
+                                         Padding="5"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         BorderThickness="0"/>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
+                                <TextBlock Text="Status: " FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Name="txtStatus_RenameInvoice" Text="Ready" VerticalAlignment="Center" Foreground="Green"/>
+                                <TextBlock Text=" | Errors: " FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <TextBlock Name="txtErrorCount_RenameInvoice" Text="0" VerticalAlignment="Center" Foreground="Red"/>
+                                <TextBlock Text=" | Warnings: " FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <TextBlock Name="txtWarningCount_RenameInvoice" Text="0" VerticalAlignment="Center" Foreground="Orange"/>
                             </StackPanel>
-                            <Label Grid.Column="1" Content="▼ Select XML" HorizontalAlignment="Left"/>
                         </Grid>
                     </GroupBox>
-
-                    <!-- Actions -->
-                    <GroupBox Header="⚙️ Actions" Margin="5">
-                        <UniformGrid Columns="3" Margin="5">
-                            <Button Content="🔍 Open Folder" Margin="5"/>
-                            <Button Content="✏️ Rename File" Margin="5"/>
-                            <Button Content="📂 Rename All" Margin="5"/>
-                        </UniformGrid>
-                    </GroupBox>
-                </StackPanel>
+                </Grid>
             </TabItem>
 
             <!-- TAB 2: EXTRACT -->
-            <TabItem Header="📑 Extract Invoice">
-                <StackPanel Margin="10" Orientation="Vertical" >
+            <TabItem Header="📑 Extract Invoice" Name="ExportXml_Tab">
+                <Grid Margin="10" Width="780">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="150"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- Folder Selection -->
-                    <GroupBox Header="📂 Folder Selection" Margin="5">
-                        <Grid Margin="5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
-                            <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="True"/>
-                            <Button Grid.Column="2" Content="Browse..." Margin="5,0"/>
-                        </Grid>
-                    </GroupBox>
+                    <StackPanel Grid.Row="0" Orientation="Vertical">
+                        <!-- Folder Selection -->
+                        <GroupBox Header="📂 Folder Selection" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Content="XML Folder:" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox Grid.Column="1" Margin="5,0" IsReadOnly="True" Name="txtBox_Browse_ExtractInvoice" MouseEnter="txtBox_Browse_ExtractInvoice_MouseEnter"/>
+                                <Button Grid.Column="2" Content="Browse..." Margin="5,0" Name="btn_Browse_ExtractInvoice" MouseEnter="btn_Browse_ExtractInvoice_MouseEnter" Click="btn_Browse_ExtractInvoice_Click"/>
+                            </Grid>
+                        </GroupBox>
 
-                    <!-- File Preview -->
-                    <GroupBox Header="🗂 File Preview" Margin="5">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Margin="5" Grid.Column="0">
-                                <ComboBox Margin="0,0,0,5" IsReadOnly="True"/>
-                                <Label Content="Files found: 0 XML" Foreground="Gray" FontSize="11"/>
+                        <!-- File Preview -->
+                        <GroupBox Header="🗂 File Preview" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="5" Grid.Column="0">
+                                    <ComboBox Margin="0,0,0,5" IsReadOnly="True" Name="ComboBox_ExtractInvoice" MouseEnter="ComboBox_ExtractInvoice_MouseEnter"/>
+                                    <Label Content="Files found: 0 XML" Foreground="Gray" FontSize="11" Name="label_TotalFiles_ExtractInvoice"/>
+                                </StackPanel>
+                                <StackPanel Margin="5" Grid.Column="1">
+                                    <Label Content="▼ Select XML" HorizontalAlignment="Left"/>
+                                    <Button Content="📂 Open File" Margin="5" Name="btn_Openfile_ExtractInvoice" MouseEnter="btn_Openfile_ExtractInvoice_MouseEnter" Click="btn_Openfile_ExtractInvoice_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Extraction Settings -->
+                        <GroupBox Header="⚙️ Extraction Settings" Margin="5">
+                            <StackPanel Margin="5" Orientation="Vertical">
+                                <TextBlock Text="Summary Info:" FontWeight="Bold" Margin="0,0,0,5"/>
+                                <WrapPanel>
+                                    <CheckBox Content="Số hóa đơn" Margin="5" IsChecked="True" IsEnabled="False"/>
+                                    <CheckBox Content="Ngày lập" Margin="5" IsChecked="True" IsEnabled="False"/>
+                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller"/>
+                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer"/>
+                                    <CheckBox Content="Tổng SL" Margin="5" IsChecked="True" Name="checkBox_TongSL"/>
+                                    <CheckBox Content="Tổng tiền" Margin="5" IsChecked="True" Name="checkBox_TongTien"/>
+                                    <CheckBox Content="Tiền thuế" Margin="5" IsChecked="True" Name="checkBox_TienThue"/>
+                                    <CheckBox Content="Thành tiền" Margin="5" IsChecked="True" Name="checkBox_ThanhTien"/>
+                                    <CheckBox Content="Đơn vị tt" Margin="5" IsChecked="True" Name="checkBox_Currency"/>
+                                </WrapPanel>
+
+                                <TextBlock Text="Each Invoice:" FontWeight="Bold" Margin="0,10,0,5"/>
+                                <WrapPanel>
+                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller2"/>
+                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer2"/>
+                                </WrapPanel>
                             </StackPanel>
-                            <Label Grid.Column="1" Content="▼ Select XML" HorizontalAlignment="Left"/>
+                        </GroupBox>
+
+                        <!-- Actions -->
+                        <GroupBox Header="⚙️ Actions" Margin="5">
+                            <Grid Margin="5" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <UniformGrid Grid.Column="0" Columns="3" Margin="0,0,5,0">
+                                    <Button Content="⬇️ Export Summary" Margin="5" Padding="10,5" Name="btn_ExportSummary_ExtractInvoice" MouseEnter="btn_ExportSummary_ExtractInvoice_MouseEnter" Click="btn_ExportSummary_ExtractInvoice_Click"/>
+                                    <Button Content="⏹ Stop" Margin="5" Name="btn_Stop_ExtractInvoice" MouseEnter="btn_Stop_ExtractInvoice_MouseEnter" Click="btn_Stop_ExtractInvoice_Click" IsEnabled="False" Background="#FFE6E6" BorderBrush="#FF9999"/>
+                                    <Button Content="🔍 Open Excel File" Margin="5" Padding="10,5" Name="btn_OpenExcel_ExtractInvoice" MouseEnter="btn_OpenExcel_ExtractInvoice_MouseEnter" Click="btn_OpenExcel_ExtractInvoice_Click"/>
+                                </UniformGrid>
+                                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="5,0,0,0">
+                                    <Button Content="🗑 Clear Log" Margin="5" Name="btn_ClearLog_ExtractInvoice" Click="btn_ClearLog_Click" Background="#FFF3CD" BorderBrush="#FFEAA0"/>
+                                    <CheckBox Content="Auto-scroll" Margin="5" Name="chk_AutoScroll_ExtractInvoice" IsChecked="True"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+
+                    <!-- Log Window -->
+                    <GroupBox Grid.Row="1" Header="📋 Log &amp; Status" Margin="5,0,5,5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Name="logScrollViewer_Extract">
+                                <TextBox Name="txtLog_ExtractInvoice" 
+                                         IsReadOnly="True"
+                                         Background="White"
+                                         FontFamily="Consolas"
+                                         FontSize="10"
+                                         Padding="5"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         BorderThickness="0"/>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
+                                <TextBlock Text="Status: " FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Name="txtStatus_ExtractInvoice" Text="Ready" VerticalAlignment="Center" Foreground="Green"/>
+                                <TextBlock Text=" | Errors: " FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <TextBlock Name="txtErrorCount_ExtractInvoice" Text="0" VerticalAlignment="Center" Foreground="Red"/>
+                                <TextBlock Text=" | Warnings: " FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <TextBlock Name="txtWarningCount_ExtractInvoice" Text="0" VerticalAlignment="Center" Foreground="Orange"/>
+                            </StackPanel>
                         </Grid>
                     </GroupBox>
-
-                    <!-- Extraction Settings -->
-                    <GroupBox Header="⚙️ Extraction Settings" Margin="5">
-                        <StackPanel Margin="5" Orientation="Vertical">
-                            <TextBlock Text="Summary Info:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <WrapPanel>
-                                <CheckBox Content="Số hóa đơn" Margin="5" IsChecked="True"/>
-                                <CheckBox Content="Ngày lập" Margin="5" IsChecked="True"/>
-                                <CheckBox Content="Người bán" Margin="5"/>
-                                <CheckBox Content="Người mua" Margin="5"/>
-                                <CheckBox Content="Tổng SL" Margin="5" IsChecked="True"/>
-                                <CheckBox Content="Tổng tiền" Margin="5" IsChecked="True" />
-                                <CheckBox Content="Tiền thuế" Margin="5" IsChecked="True"/>
-                                <CheckBox Content="Thành tiền" Margin="5" IsChecked="True"/>
-                            </WrapPanel>
-
-                            <TextBlock Text="Each Invoice:" FontWeight="Bold" Margin="0,0,0,5"/>
-                            <WrapPanel>
-                                <CheckBox Content="Người bán" Margin="5"/>
-                                <CheckBox Content="Người mua" Margin="5"/>
-                            </WrapPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!-- Actions -->
-                    <GroupBox Header="⚙️ Actions" Margin="5">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button Content="🔍 Open File" Margin="5" Padding="10,5"/>
-                            <Button Content="⬇️ Export Summary" Margin="5" Padding="10,5"/>
-                        </StackPanel>
-                    </GroupBox>
-                </StackPanel>
+                </Grid>
             </TabItem>
         </TabControl>
 
         <!-- Progress + Status -->
         <DockPanel Grid.Row="2" Background="#EEEEEE" LastChildFill="True" Height="36" VerticalAlignment="Center">
-            <!-- Progress Bar shared by all tabs -->
-            <ProgressBar x:Name="mainProgressBar" Height="16" Margin="10,0" Width="200" VerticalAlignment="Center"/>
+            <!-- Progress Bar with Text Overlay -->
+            <Grid Width="400" Height="16" Margin="10,0" VerticalAlignment="Center">
+                <ProgressBar x:Name="mainProgressBar" Height="16" MouseEnter="mainProgressBar_MouseEnter"/>
+                <TextBlock x:Name="progressText" 
+                           Text="" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center" 
+                           FontSize="10" 
+                           FontWeight="Bold" 
+                           Foreground="Black"
+                           IsHitTestVisible="False"/>
+            </Grid>
 
             <Label Content="Version 1.0"
                    VerticalAlignment="Center"

@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("Support_Accountant")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("BOSCH")]
+[assembly: AssemblyCompany("SonDNT")]
 [assembly: AssemblyProduct("Support_Accountant")]
-[assembly: AssemblyCopyright("Copyright © BOSCH 2025")]
+[assembly: AssemblyCopyright("Copyright © SonDNT 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
