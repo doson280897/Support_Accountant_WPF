@@ -1281,8 +1281,17 @@ namespace Support_Accountant
                     var summarySheet = package.Workbook.Worksheets.Add("Summary");
                     CreateDynamicSummaryHeaders(summarySheet);
 
-                    int row = 2;
+                    // Create the new Detail sheet
+                    var detailSheet = package.Workbook.Worksheets.Add("Detail");
+                    CreateDetailSheetHeaders(detailSheet);
+
+                    int summaryRow = 2;
+                    int detailRow = 2;
                     int processedCount = 0;
+
+                    // Track totals for Detail sheet summary by currency
+                    var totalsByCurrency = new Dictionary<string, Dictionary<string, (decimal amount, decimal tax)>>();
+                    var grandTotalsByCurrency = new Dictionary<string, (decimal beforeTax, decimal tax, decimal afterTax)>();
 
                     foreach (var xmlFile in extractXmlFiles)
                     {
@@ -1298,7 +1307,8 @@ namespace Support_Accountant
 
                         try
                         {
-                            ProcessXmlFileForExtraction(package, summarySheet, xmlFile, ref row);
+                            ProcessXmlFileForExtraction(package, summarySheet, xmlFile, ref summaryRow);
+                            ProcessXmlFileForDetailSheetWithCurrencyTotals(detailSheet, xmlFile, ref detailRow, totalsByCurrency, grandTotalsByCurrency);
                             LogSuccess($"Successfully processed: {fileName}", "ExtractInvoice");
                         }
                         catch (OperationCanceledException)
@@ -1320,6 +1330,9 @@ namespace Support_Accountant
                         }
                     }
 
+                    // Add summary section to Detail sheet with currency breakdown
+                    AddDetailSheetSummaryByCurrency(detailSheet, totalsByCurrency, grandTotalsByCurrency, detailRow + 2);
+
                     Dispatcher.Invoke(() =>
                     {
                         UpdateProgressBar(extractXmlFiles.Length, extractXmlFiles.Length, "Saving Excel file...");
@@ -1328,8 +1341,10 @@ namespace Support_Accountant
                     LogInfo("Finalizing Excel file...", "ExtractInvoice");
 
                     summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                    detailSheet.Cells[detailSheet.Dimension.Address].AutoFitColumns();
                     var fileInfo = new FileInfo(excelPath);
                     package.SaveAs(fileInfo);
+
                     Dispatcher.Invoke(() =>
                     {
                         UpdateProgressBar(extractXmlFiles.Length, extractXmlFiles.Length, "Export Complete!");
@@ -1364,6 +1379,316 @@ namespace Support_Accountant
                     UpdateProgressBar(0, 1, "");
                 });
             }
+        }
+
+        private void ProcessXmlFileForDetailSheetWithCurrencyTotals(ExcelWorksheet detailSheet, string xmlFile, ref int row,
+                                                           Dictionary<string, Dictionary<string, (decimal amount, decimal tax)>> totalsByCurrency,
+                                                           Dictionary<string, (decimal beforeTax, decimal tax, decimal afterTax)> grandTotalsByCurrency)
+        {
+            var doc = new XmlDocument();
+            doc.Load(xmlFile);
+
+            string sHDon = doc.SelectSingleNode("//SHDon")?.InnerText ?? "";
+            string nLap = doc.SelectSingleNode("//NLap")?.InnerText ?? "";
+            string currency = doc.SelectSingleNode("//DVTTe")?.InnerText ?? "";
+
+            // Get seller and buyer info once per invoice
+            string sellerName = doc.SelectSingleNode("//NBan/Ten")?.InnerText ?? "";
+            string sellerMST = doc.SelectSingleNode("//NBan/MST")?.InnerText ?? "";
+            string sellerAddress = doc.SelectSingleNode("//NBan/DChi")?.InnerText ?? "";
+            string buyerName = doc.SelectSingleNode("//NMua/Ten")?.InnerText ?? "";
+            string buyerMST = doc.SelectSingleNode("//NMua/MST")?.InnerText ?? "";
+            string buyerAddress = doc.SelectSingleNode("//NMua/DChi")?.InnerText ?? "";
+
+            // Create sheet name for hyperlink
+            string fileName = Path.GetFileNameWithoutExtension(xmlFile);
+            string sheetName = CreateSafeSheetName(fileName);
+
+            var nodes = doc.SelectNodes("//HHDVu");
+            int startRow = row;
+            int itemCount = nodes.Count;
+
+            foreach (XmlNode node in nodes)
+            {
+                PopulateDetailSheetRowWithHyperlink(detailSheet, node, sHDon, nLap, currency,
+                                                   sellerName, sellerMST, sellerAddress,
+                                                   buyerName, buyerMST, buyerAddress, row, sheetName,
+                                                   row == startRow); // Only add hyperlink to first row
+                row++;
+            }
+
+            if (itemCount > 1)
+            {
+                detailSheet.Cells[startRow, 1, startRow + itemCount - 1, 1].Merge = true;
+                detailSheet.Cells[startRow, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                detailSheet.Cells[startRow, 2, startRow + itemCount - 1, 2].Merge = true;
+                detailSheet.Cells[startRow, 2].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+                if (checkBox_Seller2.IsChecked == true && checkBox_Buyer2.IsChecked == true)
+                {
+                    detailSheet.Cells[startRow, 4, startRow + itemCount - 1, 4].Merge = true;
+                    detailSheet.Cells[startRow, 4].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 5, startRow + itemCount - 1, 5].Merge = true;
+                    detailSheet.Cells[startRow, 5].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 6, startRow + itemCount - 1, 6].Merge = true;
+                    detailSheet.Cells[startRow, 6].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 7, startRow + itemCount - 1, 7].Merge = true;
+                    detailSheet.Cells[startRow, 7].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 8, startRow + itemCount - 1, 8].Merge = true;
+                    detailSheet.Cells[startRow, 8].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 9, startRow + itemCount - 1, 9].Merge = true;
+                    detailSheet.Cells[startRow, 9].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                }
+                else if (checkBox_Seller2.IsChecked == true || checkBox_Buyer2.IsChecked == true)
+                {
+                    detailSheet.Cells[startRow, 4, startRow + itemCount - 1, 4].Merge = true;
+                    detailSheet.Cells[startRow, 4].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 5, startRow + itemCount - 1, 5].Merge = true;
+                    detailSheet.Cells[startRow, 5].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    detailSheet.Cells[startRow, 6, startRow + itemCount - 1, 6].Merge = true;
+                    detailSheet.Cells[startRow, 6].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                }
+            }
+
+            // Initialize currency dictionaries if they don't exist
+            if (!totalsByCurrency.ContainsKey(currency))
+            {
+                totalsByCurrency[currency] = new Dictionary<string, (decimal amount, decimal tax)>();
+            }
+
+            if (!grandTotalsByCurrency.ContainsKey(currency))
+            {
+                grandTotalsByCurrency[currency] = (0, 0, 0);
+            }
+
+            // Add invoice totals to running totals by currency
+            var tToanNode = doc.SelectSingleNode("//TToan");
+            if (tToanNode != null)
+            {
+                // Get invoice totals for this currency
+                if (decimal.TryParse(tToanNode.SelectSingleNode("TgTCThue")?.InnerText ?? "0", out decimal invoiceBeforeTax))
+                {
+                    var currentTotals = grandTotalsByCurrency[currency];
+                    grandTotalsByCurrency[currency] = (currentTotals.beforeTax + invoiceBeforeTax, currentTotals.tax, currentTotals.afterTax);
+                }
+
+                if (decimal.TryParse(tToanNode.SelectSingleNode("TgTThue")?.InnerText ?? "0", out decimal invoiceTax))
+                {
+                    var currentTotals = grandTotalsByCurrency[currency];
+                    grandTotalsByCurrency[currency] = (currentTotals.beforeTax, currentTotals.tax + invoiceTax, currentTotals.afterTax);
+                }
+
+                if (decimal.TryParse(tToanNode.SelectSingleNode("TgTTTBSo")?.InnerText ?? "0", out decimal invoiceAfterTax))
+                {
+                    var currentTotals = grandTotalsByCurrency[currency];
+                    grandTotalsByCurrency[currency] = (currentTotals.beforeTax, currentTotals.tax, currentTotals.afterTax + invoiceAfterTax);
+                }
+
+                // Process tax rates for this currency
+                var ltsuatNodes = tToanNode.SelectNodes("THTTLTSuat/LTSuat");
+                foreach (XmlNode ltsuat in ltsuatNodes)
+                {
+                    string taxRate = ltsuat.SelectSingleNode("TSuat")?.InnerText ?? "0%";
+                    if (decimal.TryParse(ltsuat.SelectSingleNode("ThTien")?.InnerText ?? "0", out decimal amount) &&
+                        decimal.TryParse(ltsuat.SelectSingleNode("TThue")?.InnerText ?? "0", out decimal tax))
+                    {
+                        if (totalsByCurrency[currency].ContainsKey(taxRate))
+                        {
+                            var existing = totalsByCurrency[currency][taxRate];
+                            totalsByCurrency[currency][taxRate] = (existing.amount + amount, existing.tax + tax);
+                        }
+                        else
+                        {
+                            totalsByCurrency[currency][taxRate] = (amount, tax);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void AddDetailSheetSummaryByCurrency(ExcelWorksheet detailSheet,
+                                                     Dictionary<string, Dictionary<string, (decimal amount, decimal tax)>> totalsByCurrency,
+                                                     Dictionary<string, (decimal beforeTax, decimal tax, decimal afterTax)> grandTotalsByCurrency,
+                                                     int startRow)
+        {
+            LogInfo("Adding currency-based summary section to Detail sheet", "ExtractInvoice");
+
+            // Add summary header
+            detailSheet.Cells[startRow, 1].Value = "TỔNG KẾT THEO TỪNG LOẠI TIỀN TỆ";
+            detailSheet.Cells[startRow, 1].Style.Font.Bold = true;
+            detailSheet.Cells[startRow, 1].Style.Font.Size = 14;
+            startRow += 2;
+
+            int currentRow = startRow;
+
+            foreach (var currencyGroup in totalsByCurrency.OrderBy(x => x.Key))
+            {
+                string currency = currencyGroup.Key;
+                var taxRateTotals = currencyGroup.Value;
+
+                // Currency header
+                detailSheet.Cells[currentRow, 1].Value = $"TIỀN TỆ: {currency}";
+                detailSheet.Cells[currentRow, 1].Style.Font.Bold = true;
+                detailSheet.Cells[currentRow, 1].Style.Font.Size = 12;
+                currentRow += 1;
+
+                // Tax breakdown table header for this currency
+                detailSheet.Cells[currentRow, 1].Value = "Thành tiền";
+                detailSheet.Cells[currentRow, 2].Value = "Thuế suất";
+                detailSheet.Cells[currentRow, 3].Value = "Tiền thuế";
+                detailSheet.Cells[currentRow, 4].Value = "Đơn vị tiền tệ";
+
+                for (int i = 1; i <= 4; i++)
+                {
+                    detailSheet.Cells[currentRow, i].Style.Font.Bold = true;
+                }
+
+                currentRow++;
+
+                // Add tax rate breakdown for this currency
+                foreach (var kvp in taxRateTotals.OrderBy(x => x.Key))
+                {
+                    detailSheet.Cells[currentRow, 1].Value = FormatDecimalString(kvp.Value.amount.ToString());
+                    detailSheet.Cells[currentRow, 2].Value = kvp.Key;
+                    detailSheet.Cells[currentRow, 3].Value = FormatDecimalString(kvp.Value.tax.ToString());
+                    detailSheet.Cells[currentRow, 4].Value = currency;
+                    currentRow++;
+                }
+
+                // Add totals for this currency
+                if (grandTotalsByCurrency.ContainsKey(currency))
+                {
+                    var totals = grandTotalsByCurrency[currency];
+
+                    currentRow++; // Empty row
+                    detailSheet.Cells[currentRow, 1].Value = "Tổng cộng (chưa thuế):";
+                    detailSheet.Cells[currentRow, 2].Value = FormatDecimalString(totals.beforeTax.ToString());
+                    detailSheet.Cells[currentRow, 3].Value = currency;
+                    detailSheet.Cells[currentRow, 1].Style.Font.Bold = true;
+
+                    currentRow++;
+                    detailSheet.Cells[currentRow, 1].Value = "Tổng tiền thuế:";
+                    detailSheet.Cells[currentRow, 2].Value = FormatDecimalString(totals.tax.ToString());
+                    detailSheet.Cells[currentRow, 3].Value = currency;
+                    detailSheet.Cells[currentRow, 1].Style.Font.Bold = true;
+
+                    currentRow++;
+                    detailSheet.Cells[currentRow, 1].Value = "Tổng cộng (đã thuế):";
+                    detailSheet.Cells[currentRow, 2].Value = FormatDecimalString(totals.afterTax.ToString());
+                    detailSheet.Cells[currentRow, 3].Value = currency;
+                    detailSheet.Cells[currentRow, 1].Style.Font.Bold = true;
+                }
+
+                currentRow += 2;
+            }
+
+            var summaryRange = detailSheet.Cells[startRow - 2, 1, currentRow - 1, 3];
+            summaryRange.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+            summaryRange.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+            summaryRange.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+            summaryRange.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+            LogInfo("Currency-based summary section added successfully to Detail sheet", "ExtractInvoice");
+        }
+
+        private void CreateDetailSheetHeaders(ExcelWorksheet detailSheet)
+        {
+            var headers = new List<string>
+            {
+                "Số Hóa Đơn", "Ngày Lập", "STT"
+            };
+
+            if (checkBox_Seller2.IsChecked == true)
+            {
+                headers.AddRange(new[] { "Tên Người Bán", "MST Người Bán", "Địa Chỉ Người Bán" });
+            }
+            if (checkBox_Buyer2.IsChecked == true)
+            {
+                headers.AddRange(new[] { "Tên Người Mua", "MST Người Mua", "Địa Chỉ Người Mua" });
+            }
+
+            headers.AddRange(new[] {"THHDVu (Tên hàng hóa/dịch vụ)",
+                "DVTinh (Đơn vị tính)", "SLuong (Số lượng)", "DGia (Đơn giá)",
+                "ThTien (Tiền trước thuế)", "TSuat (Thuế suất)", "TgTien (Tiền sau thuế)", "DVTTe (Đơn vị tiền tệ)"});
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                detailSheet.Cells[1, i + 1].Value = headers[i];
+                detailSheet.Cells[1, i + 1].Style.Font.Bold = true;
+            }
+
+            LogInfo($"Created Detail sheet headers with {headers.Count} columns", "ExtractInvoice");
+        }
+
+        private void PopulateDetailSheetRowWithHyperlink(ExcelWorksheet detailSheet, XmlNode node, string sHDon, string nLap,
+                                               string currency, string sellerName, string sellerMST, string sellerAddress,
+                                               string buyerName, string buyerMST, string buyerAddress, int row, string sheetName,
+                                               bool addHyperlink)
+        {
+            int col = 1;
+            if (addHyperlink)
+            {
+                detailSheet.Cells[row, col].Hyperlink = new ExcelHyperLink($"'{sheetName}'!A1", sHDon);
+                detailSheet.Cells[row, col].Value = sHDon;
+                detailSheet.Cells[row, col].Style.Font.UnderLine = true;
+            }
+            else
+            {
+                detailSheet.Cells[row, col].Value = sHDon;
+            }
+            col++;
+
+            detailSheet.Cells[row, col++].Value = nLap;
+
+            // Item details
+            detailSheet.Cells[row, col++].Value = node.SelectSingleNode("STT")?.InnerText ?? "";
+
+            // Seller info (if checkbox is checked)
+            if (checkBox_Seller2.IsChecked == true)
+            {
+                detailSheet.Cells[row, col++].Value = sellerName;
+                detailSheet.Cells[row, col++].Value = sellerMST;
+                detailSheet.Cells[row, col++].Value = sellerAddress;
+            }
+
+            // Buyer info (if checkbox is checked)
+            if (checkBox_Buyer2.IsChecked == true)
+            {
+                detailSheet.Cells[row, col++].Value = buyerName;
+                detailSheet.Cells[row, col++].Value = buyerMST;
+                detailSheet.Cells[row, col++].Value = buyerAddress;
+            }
+
+            detailSheet.Cells[row, col++].Value = node.SelectSingleNode("THHDVu")?.InnerText ?? "";
+            detailSheet.Cells[row, col++].Value = node.SelectSingleNode("DVTinh")?.InnerText ?? "";
+            detailSheet.Cells[row, col++].Value = FormatDecimalString(node.SelectSingleNode("SLuong")?.InnerText ?? "");
+
+            string dGia = node.SelectSingleNode("DGia")?.InnerText ?? "";
+            string thTien = node.SelectSingleNode("ThTien")?.InnerText ?? "";
+            string tSuat = node.SelectSingleNode("TSuat")?.InnerText ?? "";
+
+            detailSheet.Cells[row, col++].Value = string.IsNullOrEmpty(dGia) ? "" : $"{FormatDecimalString(dGia)} {currency}";
+
+            // ThTien (Tiền trước thuế) - before tax amount
+            detailSheet.Cells[row, col++].Value = string.IsNullOrEmpty(thTien) ? "" : $"{FormatDecimalString(thTien)} {currency}";
+
+            // TSuat (Thuế suất) - moved before TgTien
+            detailSheet.Cells[row, col++].Value = string.IsNullOrEmpty(tSuat) ? "" : FormatDecimalString(tSuat);
+
+            // TgTien (Tiền sau thuế) - after tax amount - calculate ThTien + Tax
+            string tgTien = "";
+            if (!string.IsNullOrEmpty(thTien) && !string.IsNullOrEmpty(tSuat))
+            {
+                if (decimal.TryParse(thTien, out decimal thTienValue) && decimal.TryParse(tSuat.Replace("%", ""), out decimal taxRate))
+                {
+                    decimal taxAmount = thTienValue * (taxRate / 100);
+                    decimal afterTaxAmount = thTienValue + taxAmount;
+                    tgTien = $"{FormatDecimalString(afterTaxAmount.ToString())} {currency}";
+                }
+            }
+            detailSheet.Cells[row, col++].Value = tgTien;
+
+            detailSheet.Cells[row, col++].Value = currency;
         }
 
         private void CreateDynamicSummaryHeaders(ExcelWorksheet summarySheet)
@@ -1448,8 +1773,8 @@ namespace Support_Accountant
             var detailHeaders = new List<string>
             {
                 "STT", "THHDVu (Tên hàng hóa/dịch vụ)", "DVTinh (Đơn vị tính)",
-                "SLuong (Số lượng)", "DGia (Đơn giá)", "ThTien (Thành tiền)",
-                "TSuat (Thuế suất)", "DVTTe (Đơn vị tiền tệ)"
+                "SLuong (Số lượng)", "DGia (Đơn giá)", "ThTien (Tiền trước thuế)",
+                "TSuat (Thuế suất)", "TgTien (Tiền sau thuế)", "DVTTe (Đơn vị tiền tệ)"
             };
 
             if (checkBox_Seller2.IsChecked == true)
@@ -1473,7 +1798,7 @@ namespace Support_Accountant
 
             foreach (XmlNode node in nodes)
             {
-                PopulateDetailRow(sheet, node, doc, currency, detailRow);
+                PopulateDetailRowWithAfterTax(sheet, node, doc, currency, detailRow);
                 detailRow++;
             }
 
@@ -1481,7 +1806,7 @@ namespace Support_Accountant
             sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
         }
 
-        private void PopulateDetailRow(ExcelWorksheet sheet, XmlNode node, XmlDocument doc, string currency, int row)
+        private void PopulateDetailRowWithAfterTax(ExcelWorksheet sheet, XmlNode node, XmlDocument doc, string currency, int row)
         {
             int col = 1;
             sheet.Cells[row, col++].Value = node.SelectSingleNode("STT")?.InnerText ?? "";
@@ -1494,8 +1819,26 @@ namespace Support_Accountant
             string tSuat = node.SelectSingleNode("TSuat")?.InnerText ?? "";
 
             sheet.Cells[row, col++].Value = string.IsNullOrEmpty(dGia) ? "" : $"{FormatDecimalString(dGia)} {currency}";
+
+            // ThTien (Tiền trước thuế) - before tax amount
             sheet.Cells[row, col++].Value = string.IsNullOrEmpty(thTien) ? "" : $"{FormatDecimalString(thTien)} {currency}";
+
+            // TSuat (Thuế suất) - moved before TgTien
             sheet.Cells[row, col++].Value = string.IsNullOrEmpty(tSuat) ? "" : FormatDecimalString(tSuat);
+
+            // TgTien (Tiền sau thuế) - after tax amount
+            string tgTien = "";
+            if (!string.IsNullOrEmpty(thTien) && !string.IsNullOrEmpty(tSuat))
+            {
+                if (decimal.TryParse(thTien, out decimal thTienValue) && decimal.TryParse(tSuat.Replace("%", ""), out decimal taxRate))
+                {
+                    decimal taxAmount = thTienValue * (taxRate / 100);
+                    decimal afterTaxAmount = thTienValue + taxAmount;
+                    tgTien = $"{FormatDecimalString(afterTaxAmount.ToString())} {currency}";
+                }
+            }
+            sheet.Cells[row, col++].Value = tgTien;
+
             sheet.Cells[row, col++].Value = currency;
 
             if (checkBox_Seller2.IsChecked == true)

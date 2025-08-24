@@ -184,8 +184,8 @@
                                 <WrapPanel>
                                     <CheckBox Content="Số hóa đơn" Margin="5" IsChecked="True" IsEnabled="False"/>
                                     <CheckBox Content="Ngày lập" Margin="5" IsChecked="True" IsEnabled="False"/>
-                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller"/>
-                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer"/>
+                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller" IsChecked="True"/>
+                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer" IsChecked="True"/>
                                     <CheckBox Content="Tổng SL" Margin="5" IsChecked="True" Name="checkBox_TongSL"/>
                                     <CheckBox Content="Tổng tiền" Margin="5" IsChecked="True" Name="checkBox_TongTien"/>
                                     <CheckBox Content="Tiền thuế" Margin="5" IsChecked="True" Name="checkBox_TienThue"/>
@@ -195,8 +195,8 @@
 
                                 <TextBlock Text="Each Invoice:" FontWeight="Bold" Margin="0,10,0,5"/>
                                 <WrapPanel>
-                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller2"/>
-                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer2"/>
+                                    <CheckBox Content="Người bán" Margin="5" Name="checkBox_Seller2" IsChecked="True"/>
+                                    <CheckBox Content="Người mua" Margin="5" Name="checkBox_Buyer2" IsChecked="True"/>
                                 </WrapPanel>
                             </StackPanel>
                         </GroupBox>
