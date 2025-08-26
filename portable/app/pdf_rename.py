@@ -8,28 +8,35 @@ from pathlib import Path
 def load_patterns():
     date_patterns = [
         r'Ngày\s*(?:\([^)]*\))?\s*(\d{1,2})\s*tháng\s*(?:\([^)]*\))?\s*(\d{1,2})\s*năm\s*(?:\([^)]*\))?\s*(\d{4})',
-        r'Ngày\s*tháng\s*năm/?\s*Date:\s*(\d{1,2})/(\d{1,2})/(\d{4})'
+        r'Ngày\s*tháng\s*năm/?\s*Date:\s*(\d{1,2})/(\d{1,2})/(\d{4})',
+        r'Ngày\s*lập:\s*(\d{1,2})/(\d{1,2})/(\d{4})',
+        r'Ngày\s*\(Dated\)\s*:\s*(\d{1,2})/(\d{1,2})/(\d{4})'
     ]
+    
     number_patterns = [
         r'Số\s*(?:\([^)]*\))?\s*:?\s*(\d+)',
         r'(\d{4})\s+(\d+)\s*\n?\s*Số\s*(?:\([^)]*\))?\s*:',
         r'(\d{8})\s*.*?Ngày\s*\d{1,2}\s*tháng\s*\d{1,2}\s*năm\s*\d{4}\s*Số\s*:',
         r'(?:(?:Số\s*hóa\s*đơn|Invoice\s*No)[:/\s]*(\d+)|(?:VAT\s*INVOICE\)?\s*(\d{3,8})\s*.*?(?:Số\s*hóa\s*đơn|Invoice\s*No)))',
-        r'(?:INVOICE\)?\s*(\d{4,8})\s*.*?Số\s*\([^)]*\)\s*:|Số\s*\([^)]*\)\s*:.*?(\d{4,8}))'
+        r'(?:INVOICE\)?\s*(\d{4,8})\s*.*?Số\s*\([^)]*\)\s*:|Số\s*\([^)]*\)\s*:.*?(\d{4,8}))',
+        r'Mã\s*số\s*thuế\s*\(?Tax\s*code\)?\s*:\s*\d+\s+Số\s*hóa\s*đơn\s*\(?Invoice\s*No\.\)?\s*:\s*(\d+)',
     ]
     return date_patterns, number_patterns
 
 def extract_date_and_number(pdf_path, date_patterns, number_patterns):
     with pdfplumber.open(pdf_path) as pdf:
-        text = " ".join(page.extract_text() or "" for page in pdf.pages)
+        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
         if not text.strip():
             return None, None
 
         date_result = None
         for pattern in date_patterns:
-            match = re.search(pattern, text)
+            match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
-                day, month, year = match.groups()
+                try:
+                    day, month, year = match.groups()
+                except ValueError:
+                    continue
                 year_short = year[-2:] if len(year) == 4 else year
                 date_result = f"{year_short}{month.zfill(2)}{day.zfill(2)}"
                 break
@@ -37,7 +44,7 @@ def extract_date_and_number(pdf_path, date_patterns, number_patterns):
         number_result = None
         for i, pattern in enumerate(number_patterns):
             flags = re.DOTALL | re.IGNORECASE if i >= 2 else re.IGNORECASE if i == 3 else 0
-            match = re.search(pattern, text, flags)
+            match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
                 if i == 1:
                     number_result = match.group(2)
